@@ -254,9 +254,9 @@ match client.get_certificate("certificate-name", None).await {
 
 ## Reference Links
 
-| Resource      | Link                                                                                                             |
-| ------------- | ---------------------------------------------------------------------------------------------------------------- |
-| API Reference | https://docs.rs/azure_security_keyvault_certificates                                                             |
-| crates.io     | https://crates.io/crates/azure_security_keyvault_certificates                                                    |
-| Source        | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_certificates          |
-| Examples      | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_certificates/examples |
+| Resource      | Link                                                                                                                         |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| API Reference | https://docs.rs/azure_security_keyvault_certificates                                                                         |
+| crates.io     | https://crates.io/crates/azure_security_keyvault_certificates                                                                |
+| Source        | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_certificates                      |
+| Examples      | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_certificates/examples             |

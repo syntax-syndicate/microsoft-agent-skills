@@ -218,9 +218,9 @@ match client.get_key("key-name", None).await {
 
 ## Reference Links
 
-| Resource      | Link                                                                                                     |
-| ------------- | -------------------------------------------------------------------------------------------------------- |
-| API Reference | https://docs.rs/azure_security_keyvault_keys                                                             |
-| crates.io     | https://crates.io/crates/azure_security_keyvault_keys                                                    |
-| Source        | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_keys          |
-| Examples      | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_keys/examples |
+| Resource      | Link                                                                                                        |
+| ------------- | ----------------------------------------------------------------------------------------------------------- |
+| API Reference | https://docs.rs/azure_security_keyvault_keys                                                                |
+| crates.io     | https://crates.io/crates/azure_security_keyvault_keys                                                       |
+| Source        | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_keys             |
+| Examples      | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_keys/examples    |

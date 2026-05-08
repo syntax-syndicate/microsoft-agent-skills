@@ -184,9 +184,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Reference Links
 
-| Resource      | Link                                                                                                    |
-| ------------- | ------------------------------------------------------------------------------------------------------- |
-| API Reference | https://docs.rs/azure_identity                                                                          |
-| crates.io     | https://crates.io/crates/azure_identity                                                                 |
-| Source        | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity                       |
-| Credentials   | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity#credential-structures |
+| Resource      | Link                                                                                                      |
+| ------------- | --------------------------------------------------------------------------------------------------------- |
+| API Reference | https://docs.rs/azure_identity                                                                            |
+| crates.io     | https://crates.io/crates/azure_identity                                                                   |
+| Source        | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity                         |
+| Credentials   | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity#credential-structures   |
