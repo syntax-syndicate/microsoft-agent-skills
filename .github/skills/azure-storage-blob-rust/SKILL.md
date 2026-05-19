@@ -6,7 +6,6 @@ description: |
 license: MIT
 metadata:
   author: Microsoft
-  version: "1.0.0"
   package: azure_storage_blob
 ---
 
@@ -40,20 +39,17 @@ AZURE_STORAGE_ENDPOINT=https://<account>.blob.core.windows.net/ # Required for a
 ## Authentication
 
 ```rust
+use azure_core::http::Url;
 use azure_identity::DeveloperToolsCredential;
-use azure_storage_blob::BlobClient;
+use azure_storage_blob::BlobServiceClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Local dev: DeveloperToolsCredential. Production: use ManagedIdentityCredential.
     let credential = DeveloperToolsCredential::new(None)?;
-    let blob_client = BlobClient::new(
-        "https://<account>.blob.core.windows.net/",
-        "container-name",
-        "blob-name",
-        Some(credential),
-        None,
-    )?;
+    let service_url = Url::parse("https://<account>.blob.core.windows.net/")?;
+    let service_client = BlobServiceClient::new(service_url, Some(credential), None)?;
+    let blob_client = service_client.blob_client("container-name", "blob-name");
     Ok(())
 }
 ```
@@ -72,20 +68,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust
 use azure_core::http::RequestContent;
+use azure_core::http::Url;
 use azure_identity::DeveloperToolsCredential;
-use azure_storage_blob::BlobClient;
+use azure_storage_blob::BlobServiceClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Local dev: DeveloperToolsCredential. Production: use ManagedIdentityCredential.
     let credential = DeveloperToolsCredential::new(None)?;
-    let blob_client = BlobClient::new(
-        "https://<account>.blob.core.windows.net/",
-        "container-name",
-        "blob-name",
-        Some(credential),
-        None,
-    )?;
+    let service_url = Url::parse("https://<account>.blob.core.windows.net/")?;
+    let service_client = BlobServiceClient::new(service_url, Some(credential), None)?;
+    let blob_client = service_client.blob_client("container-name", "blob-name");
 
     let data = b"hello world";
     blob_client
@@ -103,8 +96,7 @@ let props = blob_client.get_properties(None).await?;
 
 // Download blob content
 let response = blob_client.download(None).await?;
-let data = String::from_utf8(response.body.collect().await?.into())?;
-println!("Downloaded: {data}");
+let content = String::from_utf8(response.body.collect().await?.into())?;
 ```
 
 ### Delete Blob
@@ -116,17 +108,15 @@ blob_client.delete(None).await?;
 ### Container Operations
 
 ```rust
+use azure_core::http::Url;
 use azure_identity::DeveloperToolsCredential;
-use azure_storage_blob::BlobContainerClient;
+use azure_storage_blob::BlobServiceClient;
 use futures::TryStreamExt as _;
 
 let credential = DeveloperToolsCredential::new(None)?;
-let container_client = BlobContainerClient::new(
-    "https://<account>.blob.core.windows.net/",
-    "container-name",
-    Some(credential),
-    None,
-)?;
+let service_url = Url::parse("https://<account>.blob.core.windows.net/")?;
+let service_client = BlobServiceClient::new(service_url, Some(credential), None)?;
+let container_client = service_client.blob_container_client("container-name");
 
 // Create container
 container_client.create(None).await?;
@@ -150,8 +140,8 @@ let result = blob_client.download(None).await;
 
 match result {
     Ok(response) => {
-        let data: Vec<u8> = response.body.collect().await?.into();
-        println!("Downloaded {} bytes", data.len());
+        let content: Vec<u8> = response.body.collect().await?.into();
+        println!("Downloaded {} bytes", content.len());
     }
     Err(error) => {
         if matches!(error.kind(), ErrorKind::HttpResponse { .. }) {
@@ -204,9 +194,7 @@ For Entra ID auth, assign one of these roles to the identity:
 
 ## Reference Links
 
-| Resource      | Link                                                                                               |
-| ------------- | -------------------------------------------------------------------------------------------------- |
-| API Reference | https://docs.rs/azure_storage_blob                                                                 |
-| crates.io     | https://crates.io/crates/azure_storage_blob                                                        |
-| Source        | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob               |
-| Examples      | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples      |
+| Resource      | Link                                        |
+| ------------- | ------------------------------------------- |
+| API Reference | https://docs.rs/azure_storage_blob          |
+| crates.io     | https://crates.io/crates/azure_storage_blob |

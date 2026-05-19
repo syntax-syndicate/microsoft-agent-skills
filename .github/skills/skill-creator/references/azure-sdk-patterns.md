@@ -461,7 +461,7 @@ try {
 use azure_security_keyvault_secrets::SecretClient;
 use azure_security_keyvault_keys::KeyClient;
 use azure_security_keyvault_certificates::CertificateClient;
-use azure_storage_blob::BlobClient;
+use azure_storage_blob::BlobServiceClient;
 use azure_data_cosmos::CosmosClient;
 use azure_messaging_eventhubs::ProducerClient;
 ```
@@ -488,20 +488,17 @@ let secret = client.get_secret("secret-name", None).await?.into_model()?;
 println!("Secret: {:?}", secret.value);
 ```
 
-#### Storage Blob: `BlobClient::new()` with 5 parameters
+#### Storage Blob: `BlobServiceClient::new()` + derived clients
 
 ```rust
+use azure_core::http::Url;
 use azure_identity::DeveloperToolsCredential;
-use azure_storage_blob::{BlobClient, BlobClientOptions};
+use azure_storage_blob::BlobServiceClient;
 
 let credential = DeveloperToolsCredential::new(None)?;
-let blob_client = BlobClient::new(
-    "https://<storage_account_name>.blob.core.windows.net/", // Endpoint
-    "<container_name>",                                       // Container Name
-    "<blob_name>",                                            // Blob Name
-    Some(credential),                                         // Credential
-    Some(BlobClientOptions::default()),                       // Options
-)?;
+let service_url = Url::parse("https://<storage_account_name>.blob.core.windows.net/")?;
+let service_client = BlobServiceClient::new(service_url, Some(credential), None)?;
+let blob_client = service_client.blob_client("<container_name>", "<blob_name>");
 ```
 
 #### Cosmos DB: Builder pattern with `CosmosAccountReference`
@@ -620,7 +617,7 @@ Storage client error handling uses `StorageError`:
 
 ```rust
 use azure_core::error::ErrorKind;
-use azure_storage_blob::models::{StorageError, StorageErrorCode};
+use azure_storage_blob::{StorageError, StorageErrorCode};
 
 match blob_client.download(None).await {
     Ok(response) => { /* process response */ }

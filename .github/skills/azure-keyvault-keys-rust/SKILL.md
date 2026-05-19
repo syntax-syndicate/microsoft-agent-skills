@@ -6,7 +6,6 @@ description: |
 license: MIT
 metadata:
   author: Microsoft
-  version: "1.0.0"
   package: azure_security_keyvault_keys
 ---
 
@@ -115,11 +114,11 @@ client.delete_key("key-name", None).await?;
 
 ### List Keys (Pagination)
 
-`list_key_properties` returns a `Pager<T>` — `Pager` implements `Stream`, so iterate directly:
+`list_key_properties` returns a `Pager<T>` — iterate items directly:
 
 ```rust
 use azure_security_keyvault_keys::ResourceExt;
-use futures::TryStreamExt;
+use futures::TryStreamExt as _;
 
 let mut pager = client.list_key_properties(None)?;
 while let Some(key) = pager.try_next().await? {
@@ -136,7 +135,7 @@ use azure_security_keyvault_keys::{
     models::{
         CreateKeyParameters, EncryptionAlgorithm, KeyOperationParameters, KeyType,
     },
-    ResourceExt, ResourceId,
+    ResourceExt,
 };
 use rand::random;
 
@@ -148,36 +147,33 @@ let body = CreateKeyParameters {
 };
 
 let key = client
-    .create_key("key-name", body.try_into()?, None)
+    .create_key("kek-name", body.try_into()?, None)
     .await?
     .into_model()?;
+let key_version = key.resource_id()?.version.expect("key version required");
 
 // Generate a symmetric data encryption key (DEK)
 let dek = random::<u32>().to_le_bytes().to_vec();
 
-// Wrap the DEK (no version param — wraps with latest version)
-let mut parameters = KeyOperationParameters {
+// Wrap the DEK with the KEK
+let mut params = KeyOperationParameters {
     algorithm: Some(EncryptionAlgorithm::RsaOaep256),
     value: Some(dek.clone()),
     ..Default::default()
 };
 let wrapped = client
-    .wrap_key("key-name", parameters.clone().try_into()?, None)
+    .wrap_key("kek-name", &key_version, params.clone().try_into()?, None)
     .await?
     .into_model()?;
 
-// Retain the key version used for wrapping so you can unwrap with the same version
-let ResourceId { version, .. } = wrapped.resource_id()?;
-let key_version = version.as_deref().unwrap_or_default();
-
-// Unwrap the DEK (version param required)
-parameters.value = wrapped.result;
+// Unwrap to recover the DEK
+params.value = wrapped.result;
 let unwrapped = client
-    .unwrap_key("key-name", key_version, parameters.try_into()?, None)
+    .unwrap_key("kek-name", &key_version, params.try_into()?, None)
     .await?
     .into_model()?;
 
-assert!(matches!(unwrapped.result, Some(result) if result.eq(&dek)));
+assert_eq!(unwrapped.result.as_ref(), Some(&dek));
 ```
 
 ## Key Types
@@ -199,15 +195,6 @@ For Entra ID auth, assign one of these roles:
 | `Key Vault Crypto User`    | Use keys for crypto ops |
 | `Key Vault Crypto Officer` | Full key management     |
 
-## Error Handling
-
-```rust
-match client.get_key("key-name", None).await {
-    Ok(response) => println!("Key: {:#?}", response.into_model()?.key),
-    Err(err) => println!("Error: {:#?}", err.into_inner()?),
-}
-```
-
 ## Best Practices
 
 1. **Use `DeveloperToolsCredential`** for local dev, **`ManagedIdentityCredential`** for production — the Rust SDK does not have `DefaultAzureCredential`
@@ -218,9 +205,7 @@ match client.get_key("key-name", None).await {
 
 ## Reference Links
 
-| Resource      | Link                                                                                                        |
-| ------------- | ----------------------------------------------------------------------------------------------------------- |
-| API Reference | https://docs.rs/azure_security_keyvault_keys                                                                |
-| crates.io     | https://crates.io/crates/azure_security_keyvault_keys                                                       |
-| Source        | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_keys             |
-| Examples      | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_keys/examples    |
+| Resource      | Link                                                  |
+| ------------- | ----------------------------------------------------- |
+| API Reference | https://docs.rs/azure_security_keyvault_keys          |
+| crates.io     | https://crates.io/crates/azure_security_keyvault_keys |

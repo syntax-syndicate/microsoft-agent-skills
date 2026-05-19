@@ -6,7 +6,6 @@ description: |
 license: MIT
 metadata:
   author: Microsoft
-  version: "1.0.0"
   package: azure_data_cosmos
 ---
 
@@ -57,11 +56,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Client Hierarchy
 
-| Client            | Purpose                   | Access                                      |
-| ----------------- | ------------------------- | ------------------------------------------- |
+| Client            | Purpose                   | Access                                  |
+| ----------------- | ------------------------- | --------------------------------------- |
 | `CosmosClient`    | Account-level operations  | `CosmosClient::builder().build(account).await?` |
-| `DatabaseClient`  | Database operations       | `client.database_client("db")`              |
-| `ContainerClient` | Container/item operations | `database.container_client("c").await`      |
+| `DatabaseClient`  | Database operations       | `client.database_client("db")`          |
+| `ContainerClient` | Container/item operations | `database.container_client("c").await` |
 
 ## Core Workflow
 
@@ -131,9 +130,7 @@ For Entra ID auth, assign one of these built-in Cosmos DB roles:
 
 ## Reference Links
 
-| Resource      | Link                                                                                        |
-| ------------- | ------------------------------------------------------------------------------------------- |
-| API Reference | https://docs.rs/azure_data_cosmos                                                           |
-| crates.io     | https://crates.io/crates/azure_data_cosmos                                                  |
-| Source        | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos           |
-| Examples      | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos/examples  |
+| Resource      | Link                                       |
+| ------------- | ------------------------------------------ |
+| API Reference | https://docs.rs/azure_data_cosmos          |
+| crates.io     | https://crates.io/crates/azure_data_cosmos |
