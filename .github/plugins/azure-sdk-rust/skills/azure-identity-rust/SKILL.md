@@ -6,7 +6,6 @@ description: |
 license: MIT
 metadata:
   author: Microsoft
-  version: "1.0.0"
   package: azure_identity
 ---
 
@@ -20,7 +19,6 @@ Use this skill when:
 - You need `DeveloperToolsCredential` for local development
 - You need `ManagedIdentityCredential` for Azure-hosted workloads
 - You need service principal auth with secret or certificate
-- You need federated identity credential (FIC) auth
 
 > **IMPORTANT:** Only use official `azure_*` crates published by the [azure-sdk](https://crates.io/users/azure-sdk) crates.io user. Do NOT use the deprecated `azure_sdk_*` crates (MindFlavor/AzureSDKForRust) or community crates. Official crates use underscores in names and none have version 0.21.0.
 
@@ -113,53 +111,6 @@ let credential = ClientSecretCredential::new(
 )?;
 ```
 
-### Federated Identity Credential (FIC)
-
-Authenticate an Entra application with an access token from a managed identity. See [Configure an application to trust a managed identity](https://learn.microsoft.com/entra/workload-id/workload-identity-federation-config-app-trust-managed-identity) for details.
-
-```rust
-use azure_core::credentials::TokenCredential;
-use azure_core::http::ClientMethodOptions;
-use azure_identity::{ClientAssertion, ClientAssertionCredential, ManagedIdentityCredential};
-use azure_security_keyvault_secrets::SecretClient;
-use std::sync::Arc;
-
-#[derive(Debug)]
-struct AccessTokenAssertion {
-    credential: Arc<dyn TokenCredential>,
-}
-
-#[async_trait::async_trait]
-impl ClientAssertion for AccessTokenAssertion {
-    async fn secret(&self, _: Option<ClientMethodOptions<'_>>) -> azure_core::Result<String> {
-        Ok(self
-            .credential
-            .get_token(&[&"api://AzureADTokenExchange/.default"], None)
-            .await?
-            .token
-            .secret()
-            .to_string())
-    }
-}
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let assertion = AccessTokenAssertion {
-        credential: ManagedIdentityCredential::new(None)?,
-    };
-
-    let credential = ClientAssertionCredential::new(
-        String::from("tenant-id"),
-        String::from("client-id"),
-        assertion,
-        None,
-    )?;
-
-    let client = SecretClient::new("https://<vault>.vault.azure.net/", credential.clone(), None)?;
-    Ok(())
-}
-```
-
 ## Credential Types
 
 | Credential                    | Use Case                               |
@@ -179,14 +130,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 1. **Use `DeveloperToolsCredential`** for local dev, **`ManagedIdentityCredential`** for production — the Rust SDK does not have `DefaultAzureCredential`
 2. **Never hardcode credentials** — use environment variables for service principals
 3. **Clone credentials** — pass `credential.clone()` when constructing multiple clients; credentials are `Arc`-wrapped
-4. **Reuse clients** — clients are thread-safe (`Send + Sync`); create once, share across tasks
+4. **Reuse clients** — clients are thread-safe; create once, share across tasks
 5. **Assign RBAC roles** — ensure the identity has appropriate roles for the target service (e.g., "Key Vault Secrets User" for secret reads)
 
 ## Reference Links
 
-| Resource      | Link                                                                                                    |
-| ------------- | ------------------------------------------------------------------------------------------------------- |
-| API Reference | https://docs.rs/azure_identity                                                                          |
-| crates.io     | https://crates.io/crates/azure_identity                                                                 |
-| Source        | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity                       |
-| Credentials   | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity#credential-structures |
+| Resource      | Link                                    |
+| ------------- | --------------------------------------- |
+| API Reference | https://docs.rs/azure_identity          |
+| crates.io     | https://crates.io/crates/azure_identity |

@@ -6,7 +6,6 @@ description: |
 license: MIT
 metadata:
   author: Microsoft
-  version: "1.0.0"
   package: azure_storage_blob
 ---
 
@@ -103,8 +102,7 @@ let props = blob_client.get_properties(None).await?;
 
 // Download blob content
 let response = blob_client.download(None).await?;
-let data = String::from_utf8(response.body.collect().await?.into())?;
-println!("Downloaded: {data}");
+let content = response.into_body().collect_bytes().await?;
 ```
 
 ### Delete Blob
@@ -150,8 +148,8 @@ let result = blob_client.download(None).await;
 
 match result {
     Ok(response) => {
-        let data: Vec<u8> = response.body.collect().await?.into();
-        println!("Downloaded {} bytes", data.len());
+        let content = response.into_body().collect_bytes().await?;
+        println!("Downloaded {} bytes", content.len());
     }
     Err(error) => {
         if matches!(error.kind(), ErrorKind::HttpResponse { .. }) {
@@ -204,9 +202,7 @@ For Entra ID auth, assign one of these roles to the identity:
 
 ## Reference Links
 
-| Resource      | Link                                                                                          |
-| ------------- | --------------------------------------------------------------------------------------------- |
-| API Reference | https://docs.rs/azure_storage_blob                                                            |
-| crates.io     | https://crates.io/crates/azure_storage_blob                                                   |
-| Source        | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob          |
-| Examples      | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples |
+| Resource      | Link                                        |
+| ------------- | ------------------------------------------- |
+| API Reference | https://docs.rs/azure_storage_blob          |
+| crates.io     | https://crates.io/crates/azure_storage_blob |

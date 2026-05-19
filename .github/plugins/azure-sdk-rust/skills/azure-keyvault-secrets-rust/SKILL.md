@@ -6,7 +6,6 @@ description: |
 license: MIT
 metadata:
   author: Microsoft
-  version: "1.0.0"
   package: azure_security_keyvault_secrets
 ---
 
@@ -131,15 +130,21 @@ while let Some(secret) = pager.try_next().await? {
 ## Error Handling
 
 ```rust
+use azure_core::{error::ErrorKind, http::StatusCode};
+
 match client.get_secret("secret-name", None).await {
-    Ok(response) => {
-        let secret = response.into_model()?;
-        println!("Secret: {:?}", secret.value);
-    }
-    Err(err) => {
-        // Use into_inner() for programmatic error inspection
-        println!("Error: {:#?}", err.into_inner()?);
-    }
+    Ok(response) => println!("Secret: {:?}", response.into_model()?.value),
+    Err(e) => match e.kind() {
+        ErrorKind::HttpResponse { status, error_code, .. }
+            if *status == StatusCode::NotFound =>
+        {
+            println!("Secret not found");
+            if let Some(code) = error_code {
+                println!("ErrorCode: {code}");
+            }
+        }
+        _ => println!("Error: {e:?}"),
+    },
 }
 ```
 
@@ -162,9 +167,7 @@ For Entra ID auth, assign one of these roles:
 
 ## Reference Links
 
-| Resource      | Link                                                                                                        |
-| ------------- | ----------------------------------------------------------------------------------------------------------- |
-| API Reference | https://docs.rs/azure_security_keyvault_secrets                                                             |
-| crates.io     | https://crates.io/crates/azure_security_keyvault_secrets                                                    |
-| Source        | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_secrets          |
-| Examples      | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_secrets/examples |
+| Resource      | Link                                                     |
+| ------------- | -------------------------------------------------------- |
+| API Reference | https://docs.rs/azure_security_keyvault_secrets          |
+| crates.io     | https://crates.io/crates/azure_security_keyvault_secrets |
