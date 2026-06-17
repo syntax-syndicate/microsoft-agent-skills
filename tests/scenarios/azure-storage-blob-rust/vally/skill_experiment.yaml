@@ -1,6 +1,7 @@
 name: azure-storage-blob-rust-skill-experiment
 evals:
-  - eval.yaml
+  - eval-experiment.yaml
+  - eval-nobuild-experiment.yaml
 
 vary:
   - /defaults/model
