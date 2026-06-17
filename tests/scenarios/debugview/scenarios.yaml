@@ -1,0 +1,508 @@
+config:
+  model: gpt-4
+  max_tokens: 2000
+  temperature: 0.3
+
+scenarios:
+  - name: basic_win32_capture
+    prompt: |
+      I need to capture OutputDebugString output from a Windows application
+      for 30 seconds using the command line. Show me how.
+    expected_patterns:
+      - "dbgviewcli"
+      - "--no-banner"
+      - "--duration"
+    forbidden_patterns:
+      - "Linux"
+      - "macOS"
+      - "syslog"
+    tags:
+      - basic
+      - win32
+    mock_response: |
+      dbgviewcli --no-banner --duration 30
+
+  - name: kernel_capture_elevated
+    prompt: |
+      I want to capture kernel-mode debug output (DbgPrint) from my
+      Windows driver for 60 seconds and save it to a CSV file.
+    expected_patterns:
+      - "--kernel"
+      - "--no-banner"
+      - "--duration"
+      - "--format csv"
+      - "admin"
+    forbidden_patterns:
+      - "usermode only"
+      - "not supported"
+    tags:
+      - kernel
+      - privileges
+      - logging
+    mock_response: |
+      # Run as Administrator
+      dbgviewcli --kernel --no-banner --duration 60 --format csv --log kernel_output.csv
+
+  - name: process_filter_by_pid
+    prompt: |
+      I only want to see debug output from process ID 5678. Capture for
+      10 seconds with no banner.
+    expected_patterns:
+      - "--pid-filter"
+      - "5678"
+      - "--no-banner"
+      - "--duration"
+    forbidden_patterns:
+      - "findstr"
+      - "grep"
+    tags:
+      - filtering
+      - pid
+    mock_response: |
+      dbgviewcli --no-banner --pid-filter 5678 --duration 10
+
+  - name: process_filter_by_name
+    prompt: |
+      Capture debug output only from myservice.exe for up to 500 lines.
+    expected_patterns:
+      - "--process-filter"
+      - "myservice"
+      - "--max-lines"
+      - "--no-banner"
+    forbidden_patterns:
+      - "tasklist"
+      - "findstr"
+    tags:
+      - filtering
+      - process-name
+    mock_response: |
+      dbgviewcli --no-banner --process-filter "myservice.exe" --max-lines 500
+
+  - name: wait_for_pattern
+    prompt: |
+      I need to capture debug output until I see an error message containing
+      "FATAL ERROR" in the output. Add a safety timeout of 2 minutes.
+    expected_patterns:
+      - "--wait-for"
+      - "FATAL"
+      - "--duration"
+      - "--no-banner"
+    forbidden_patterns:
+      - "unbounded"
+      - "forever"
+    tags:
+      - pattern
+      - bounded
+    mock_response: |
+      dbgviewcli --no-banner --wait-for "*FATAL ERROR*" --duration 120
+
+  - name: tail_recent_output
+    prompt: |
+      I want to capture debug output for 30 seconds but only show me
+      the last 50 lines when it finishes.
+    expected_patterns:
+      - "--tail"
+      - "50"
+      - "--duration"
+      - "--no-banner"
+    tags:
+      - tail
+      - recent
+    mock_response: |
+      dbgviewcli --no-banner --tail 50 --duration 30
+
+  - name: boot_logging_workflow
+    prompt: |
+      I need to enable boot-time debug logging to capture driver output
+      during Windows startup. Show me the full workflow.
+    expected_patterns:
+      - "--boot-enable"
+      - "--boot-disable"
+      - "admin"
+    forbidden_patterns:
+      - "regedit"
+      - "registry editor"
+    tags:
+      - boot
+      - advanced
+      - privileges
+    mock_response: |
+      # Step 1: Enable boot logging (requires Administrator)
+      dbgviewcli --boot-enable
+
+      # Step 2: Reboot the system
+      # The driver will capture debug output during boot
+
+      # Step 3: After reboot, read the captured boot log
+      dbgviewcli --load <boot_log_path>
+
+      # Step 4: Disable boot logging when done
+      dbgviewcli --boot-disable
+
+  - name: status_check
+    prompt: |
+      How do I check if DbgView is already running and what its state is?
+    expected_patterns:
+      - "--status"
+      - "running"
+      - "paused"
+    forbidden_patterns:
+      - "tasklist"
+      - "Get-Process"
+    tags:
+      - status
+      - detection
+    mock_response: |
+      dbgviewcli --status
+      # Output (key=value, machine-readable):
+      # running=true
+      # paused=false
+      # elevated=true
+
+  - name: remote_monitoring
+    prompt: |
+      I want to monitor debug output from a remote machine named DEVSERVER01
+      for 2 minutes.
+    expected_patterns:
+      - "--connect"
+      - "DEVSERVER01"
+      - "--duration"
+      - "--no-banner"
+    tags:
+      - remote
+      - monitoring
+    mock_response: |
+      dbgviewcli --connect DEVSERVER01 --no-banner --duration 120
+
+  - name: include_exclude_filters
+    prompt: |
+      Capture debug output but only include lines from "NetworkDriver" or
+      "StorageDriver" and exclude any lines containing "verbose" or "trace".
+    expected_patterns:
+      - "--filter"
+      - "--exclude"
+      - "--no-banner"
+    forbidden_patterns:
+      - "regex"
+      - "findstr"
+      - "|"
+    tags:
+      - filtering
+      - wildcards
+    mock_response: |
+      dbgviewcli --no-banner --filter "NetworkDriver*;StorageDriver*" --exclude "verbose*;trace*" --duration 60
+
+  - name: combined_safety_bounds
+    prompt: |
+      I want to capture kernel debug output with multiple safety limits:
+      max 2 minutes, max 5000 lines, and stop if I see "BUGCHECK".
+      Save to XML format.
+    expected_patterns:
+      - "--kernel"
+      - "--duration"
+      - "--max-lines"
+      - "--wait-for"
+      - "--format xml"
+      - "--no-banner"
+      - "admin"
+    tags:
+      - combined
+      - safety
+      - advanced
+    mock_response: |
+      # Run as Administrator
+      dbgviewcli --kernel --no-banner --duration 120 --max-lines 5000 --wait-for "*BUGCHECK*" --format xml --log kernel_debug.xml
+
+  - name: log_file_with_rotation
+    prompt: |
+      Set up a long-running debug capture that logs to a file with a
+      100MB size limit and wraps when full.
+    expected_patterns:
+      - "--log"
+      - "--log-limit"
+      - "--log-wrap"
+      - "--no-banner"
+    forbidden_patterns:
+      - "unlimited"
+    tags:
+      - logging
+      - rotation
+    mock_response: |
+      dbgviewcli --no-banner --log debug_output.log --log-limit 100 --log-wrap --duration 3600
+
+  - name: runtime_pause_resume
+    prompt: |
+      I have a DbgViewCli instance running in another terminal. I want to
+      pause it temporarily and then resume it later. How do I do that?
+    expected_patterns:
+      - "--pause"
+      - "--resume"
+    forbidden_patterns:
+      - "taskkill"
+      - "Ctrl+C"
+    tags:
+      - runtime-control
+      - pause
+    mock_response: |
+      # Pause the running DbgViewCli instance
+      dbgviewcli --pause
+
+      # Resume it when ready
+      dbgviewcli --resume
+
+  - name: runtime_stop
+    prompt: |
+      I need to gracefully stop a DbgViewCli instance running in another
+      terminal from my current terminal session.
+    expected_patterns:
+      - "--stop"
+    forbidden_patterns:
+      - "taskkill"
+      - "kill"
+      - "Ctrl+C"
+    tags:
+      - runtime-control
+      - stop
+    mock_response: |
+      # Gracefully stop the running instance
+      dbgviewcli --stop
+
+  - name: eula_acceptance_unattended
+    prompt: |
+      I need to run DbgViewCli in an automated CI/CD pipeline where there
+      is no user to accept the EULA. How do I handle this?
+    expected_patterns:
+      - "--accepteula"
+      - "--no-banner"
+    forbidden_patterns:
+      - "interactive"
+      - "click"
+    tags:
+      - automation
+      - eula
+    mock_response: |
+      # Accept EULA non-interactively for automated deployments
+      dbgviewcli --accepteula --no-banner --duration 30
+
+  - name: crashdump_analysis
+    prompt: |
+      I have a crash dump file at C:\dumps\memory.dmp and I want to
+      extract any debug output that was captured before the crash.
+    expected_patterns:
+      - "--crashdump"
+      - "--no-banner"
+    forbidden_patterns:
+      - "WinDbg"
+      - "kd"
+    tags:
+      - crashdump
+      - analysis
+    mock_response: |
+      dbgviewcli --no-banner --crashdump "C:\dumps\memory.dmp"
+
+  - name: csv_output_to_file
+    prompt: |
+      Capture kernel debug output for 2 minutes, format as CSV, and save
+      to a file for later analysis in Excel.
+    expected_patterns:
+      - "--kernel"
+      - "--format csv"
+      - "--log"
+      - "--duration"
+      - "--no-banner"
+      - "admin"
+    tags:
+      - output-format
+      - logging
+      - kernel
+    mock_response: |
+      # Run as Administrator
+      dbgviewcli --kernel --no-banner --duration 120 --format csv --log kernel_output.csv
+
+  - name: xml_format_output
+    prompt: |
+      I want to capture debug output in XML format for 15 seconds so I
+      can parse it with an XML library.
+    expected_patterns:
+      - "--format xml"
+      - "--no-banner"
+      - "--duration"
+    tags:
+      - output-format
+      - xml
+    mock_response: |
+      dbgviewcli --no-banner --format xml --duration 15
+
+  - name: clock_time_display
+    prompt: |
+      Capture debug output showing wall-clock time with milliseconds
+      instead of elapsed time, for 30 seconds.
+    expected_patterns:
+      - "--clock-ms"
+      - "--no-banner"
+      - "--duration"
+    tags:
+      - time-display
+      - basic
+    mock_response: |
+      dbgviewcli --no-banner --clock-ms --duration 30
+
+  - name: global_win32_capture
+    prompt: |
+      I need to capture OutputDebugString output from services running
+      in session 0, not just my own user session.
+    expected_patterns:
+      - "--global"
+      - "--no-banner"
+      - "--duration"
+    forbidden_patterns:
+      - "session 1"
+    tags:
+      - win32
+      - global
+      - advanced
+    mock_response: |
+      # Global Win32 capture includes session 0 (services)
+      dbgviewcli --global --no-banner --duration 60
+
+  # ============================================================
+  # NEGATIVE SCENARIOS — Agent should refuse or correct these
+  # ============================================================
+
+  - name: negative_unbounded_capture
+    prompt: |
+      Just start capturing debug output and show me everything.
+      Don't worry about stopping — I'll kill it manually.
+    expected_patterns:
+      - "--duration"
+      - "--max-lines"
+      - "--no-banner"
+    forbidden_patterns:
+      - "dbgviewcli\n"
+      - "run indefinitely"
+      - "kill"
+      - "taskkill"
+    tags:
+      - negative
+      - bounded
+      - safety
+    mock_response: |
+      # Always use bounded execution for automated/agent use
+      dbgviewcli --no-banner --duration 60 --max-lines 10000
+      # Never run unbounded — use --duration, --max-lines, or --wait-for
+
+  - name: negative_wrong_platform_linux
+    prompt: |
+      I'm running Ubuntu 22.04. How do I use DbgView to capture
+      debug output from my Linux application?
+    expected_patterns:
+      - "Windows"
+      - "not supported"
+    forbidden_patterns:
+      - "dbgviewcli"
+      - "sudo"
+      - "apt"
+      - "--duration"
+    tags:
+      - negative
+      - platform
+    mock_response: |
+      DbgViewCli is a Windows-only tool for capturing OutputDebugString and
+      kernel DbgPrint output. It is not available on Linux.
+
+      For Linux debug output, consider:
+      - strace / ltrace for system call tracing
+      - journalctl for systemd journal
+      - dmesg for kernel messages
+      - Application-specific logging (syslog, stderr)
+
+  - name: negative_wrong_platform_macos
+    prompt: |
+      Can I use DebugView on my Mac to capture debug logs from my
+      macOS application?
+    expected_patterns:
+      - "Windows"
+      - "not supported"
+    forbidden_patterns:
+      - "dbgviewcli"
+      - "brew"
+      - "--duration"
+    tags:
+      - negative
+      - platform
+    mock_response: |
+      DbgViewCli is a Windows-only tool. It cannot run on macOS.
+
+      For macOS debug output, consider:
+      - Console.app for system log viewing
+      - log stream / log show for unified logging
+      - os_log for application instrumentation
+      - lldb for debugger-attached output
+
+  - name: negative_kernel_without_elevation
+    prompt: |
+      Capture kernel debug output for 30 seconds. I'm running as a
+      standard user, not administrator.
+    expected_patterns:
+      - "admin"
+      - "elevat"
+      - "--kernel"
+    forbidden_patterns:
+      - "dbgviewcli --kernel --no-banner --duration 30\n"
+    tags:
+      - negative
+      - privileges
+      - kernel
+    mock_response: |
+      Kernel capture requires Administrator privileges. You must:
+
+      1. Open an elevated (Run as Administrator) terminal
+      2. Then run:
+         dbgviewcli --kernel --no-banner --duration 30
+
+      Without elevation, the kernel driver cannot be loaded and
+      kernel debug output will not be captured.
+
+  - name: negative_waitfor_without_timeout
+    prompt: |
+      Capture debug output and stop only when you see "COMPLETED"
+      in the output. No time limit needed.
+    expected_patterns:
+      - "--wait-for"
+      - "--duration"
+    forbidden_patterns:
+      - "dbgviewcli --no-banner --wait-for"
+    tags:
+      - negative
+      - bounded
+      - safety
+    mock_response: |
+      # Always pair --wait-for with a safety --duration timeout
+      dbgviewcli --no-banner --wait-for "*COMPLETED*" --duration 300
+
+      # IMPORTANT: Never use --wait-for alone. If the pattern never
+      # matches, the capture would run indefinitely. Always add a
+      # --duration safety limit.
+
+  - name: negative_etw_tracing_request
+    prompt: |
+      I need to capture ETW trace events from my Windows application
+      using DebugView.
+    expected_patterns:
+      - "ETW"
+      - "not"
+    forbidden_patterns:
+      - "dbgviewcli"
+      - "--duration"
+    tags:
+      - negative
+      - scope
+    mock_response: |
+      DbgViewCli captures OutputDebugString and kernel DbgPrint output only.
+      It does not capture ETW (Event Tracing for Windows) events.
+
+      For ETW tracing, use:
+      - WPR (Windows Performance Recorder) for capture
+      - WPA (Windows Performance Analyzer) for analysis
+      - xperf for command-line ETW tracing
+      - logman for trace session management
