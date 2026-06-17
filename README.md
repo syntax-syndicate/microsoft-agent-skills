@@ -91,8 +91,8 @@ Coding agents like [Copilot CLI](https://github.com/features/copilot/cli) and [G
 | Skill | Description |
 |-------|-------------|
 | [cloud-solution-architect](.github/skills/cloud-solution-architect/) | Design well-architected Azure cloud systems. Architecture styles, 44 design patterns, technology choices, mission-critical design, WAF pillars. |
-| [debugview](.github/skills/debugview/) | Sysinternals DebugView CLI — capture and analyze usermode/kernel-mode Windows debug output. Bounded execution, filtering, boot logging, remote monitoring. |
 | [copilot-sdk](.github/skills/copilot-sdk/) | Build applications powered by GitHub Copilot using the Copilot SDK. Session management, custom tools, streaming, hooks, MCP servers, BYOK, deployment patterns. |
+| [debugview](.github/skills/debugview/) | Sysinternals DebugView CLI — capture and analyze usermode/kernel-mode Windows debug output. Bounded execution, filtering, boot logging, remote monitoring. |
 | [entra-agent-id](.github/skills/entra-agent-id/) | Microsoft Entra Agent ID (preview) — create OAuth2-capable AI agent identities via Microsoft Graph beta API. Blueprints, BlueprintPrincipals, permissions, WIF. |
 | [frontend-design-review](.github/skills/frontend-design-review/) | Review and create distinctive frontend interfaces. Design system compliance, quality pillars, accessibility, and creative aesthetics. |
 | [github-issue-creator](.github/skills/github-issue-creator/) | Convert raw notes, error logs, or screenshots into structured GitHub issues. |
