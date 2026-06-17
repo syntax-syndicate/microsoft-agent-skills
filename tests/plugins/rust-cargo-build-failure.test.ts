@@ -66,10 +66,10 @@ describe("rust-cargo-build-failure grader", () => {
     );
 
     expect(result.passed).toBe(false);
-    expect(result.metadata?.compiler_errors_collected).toBe(true);
-    expect(result.metadata?.compiler_error_count).toBe(1);
+    expect(result.metadata?.["compiler_errors_collected"]).toBe(true);
+    expect(result.metadata?.["compiler_error_count"]).toBe(1);
 
-    const compilerErrors = result.metadata?.compiler_errors as Array<{
+    const compilerErrors = result.metadata?.["compiler_errors"] as Array<{
       errorCode: string;
       message: string;
     }>;
@@ -100,8 +100,8 @@ describe("rust-cargo-build-failure grader", () => {
 
     expect(result.passed).toBe(true);
     expect(result.score).toBe(1);
-    expect(result.metadata?.failed_build_count).toBe(0);
-    expect(result.metadata?.compiler_error_count).toBe(1);
+    expect(result.metadata?.["failed_build_count"]).toBe(0);
+    expect(result.metadata?.["compiler_error_count"]).toBe(1);
   });
 
   it("does not ignore non-matching compiler errors", async () => {
@@ -125,8 +125,8 @@ describe("rust-cargo-build-failure grader", () => {
     );
 
     expect(result.passed).toBe(false);
-    expect(result.metadata?.failed_build_count).toBe(1);
-    expect(result.metadata?.compiler_error_count).toBe(1);
+    expect(result.metadata?.["failed_build_count"]).toBe(1);
+    expect(result.metadata?.["compiler_error_count"]).toBe(1);
   });
 
   it("does not emit compiler errors when emit_in_metadata is false", async () => {
@@ -140,9 +140,9 @@ describe("rust-cargo-build-failure grader", () => {
     );
 
     expect(result.passed).toBe(false);
-    expect(result.metadata?.compiler_errors_collected).toBeUndefined();
-    expect(result.metadata?.compiler_errors).toBeUndefined();
-    expect(result.metadata?.compiler_error_count).toBeUndefined();
+    expect(result.metadata?.["compiler_errors_collected"]).toBeUndefined();
+    expect(result.metadata?.["compiler_errors"]).toBeUndefined();
+    expect(result.metadata?.["compiler_error_count"]).toBeUndefined();
   });
 
   it("does not collect compiler errors when collect_compiler_errors is false", async () => {
@@ -156,8 +156,8 @@ describe("rust-cargo-build-failure grader", () => {
     );
 
     expect(result.passed).toBe(false);
-    expect(result.metadata?.compiler_errors_collected).toBeUndefined();
-    expect(result.metadata?.compiler_errors).toBeUndefined();
-    expect(result.metadata?.compiler_error_count).toBeUndefined();
+    expect(result.metadata?.["compiler_errors_collected"]).toBeUndefined();
+    expect(result.metadata?.["compiler_errors"]).toBeUndefined();
+    expect(result.metadata?.["compiler_error_count"]).toBeUndefined();
   });
 });

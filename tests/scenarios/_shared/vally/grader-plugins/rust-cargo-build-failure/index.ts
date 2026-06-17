@@ -172,7 +172,9 @@ function extractCompilerErrors(text: string): CompilerError[] {
 
   while ((match = errorPattern.exec(text)) !== null) {
     const errorCode = match[1];
-    const message = match[2].trim();
+    const rawMessage = match[2];
+    if (!errorCode || rawMessage === undefined) continue;
+    const message = rawMessage.trim();
     errors.push({
       errorCode,
       message,
@@ -335,7 +337,9 @@ class CargoBuildTrajectoryGrader implements Grader {
           if (!shouldIgnore) {
             build.failed = true;
             build.failureReason = failure[0];
-            build.resultExcerpt = failure[1];
+            if (failure[1] !== undefined) {
+              build.resultExcerpt = failure[1];
+            }
           }
         }
       }
@@ -411,9 +415,9 @@ class CargoBuildTrajectoryGrader implements Grader {
       }
 
       if (allCompilerErrors.length > 0) {
-        metadata.compiler_errors_collected = true;
-        metadata.compiler_errors = allCompilerErrors;
-        metadata.compiler_error_count = allCompilerErrors.length;
+        metadata["compiler_errors_collected"] = true;
+        metadata["compiler_errors"] = allCompilerErrors;
+        metadata["compiler_error_count"] = allCompilerErrors.length;
       }
     }
 
