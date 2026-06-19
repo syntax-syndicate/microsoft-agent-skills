@@ -33,7 +33,7 @@ function makeInput(
   config?: Record<string, unknown>,
 ): unknown {
   return {
-    config,
+    config: config ?? { collect_trajectory_compiler_errors: true },
     trajectory: {
       events: [
         {
@@ -58,6 +58,105 @@ function makeInput(
 }
 
 describe("rust-cargo-build-failure grader", () => {
+  it("detects cargo build failures", async () => {
+    const grader = getGrader();
+    const result = await grader.grade(
+      makeInput("error[E0425]: cannot find value `x` in this scope"),
+    );
+    expect(result.passed).toBe(false);
+    expect(result.metadata?.["failed_cargo_count"]).toBe(1);
+  });
+
+  it("detects cargo check failures", async () => {
+    const grader = getGrader();
+    const input = {
+      config: { collect_trajectory_compiler_errors: true },
+      trajectory: {
+        events: [
+          {
+            type: "tool_call",
+            data: {
+              toolName: "powershell",
+              toolCallId: "call-check",
+              arguments: { command: "cargo check" },
+            },
+          },
+          {
+            type: "tool_result",
+            data: {
+              toolCallId: "call-check",
+              success: false,
+              result: { content: "error[E0308]: mismatched types" },
+            },
+          },
+        ],
+      },
+    };
+    const result = await grader.grade(input);
+    expect(result.passed).toBe(false);
+    expect(result.metadata?.["failed_cargo_count"]).toBe(1);
+  });
+
+  it("detects cargo clippy failures", async () => {
+    const grader = getGrader();
+    const input = {
+      config: { collect_trajectory_compiler_errors: true },
+      trajectory: {
+        events: [
+          {
+            type: "tool_call",
+            data: {
+              toolName: "bash",
+              toolCallId: "call-clippy",
+              arguments: { command: "cargo clippy" },
+            },
+          },
+          {
+            type: "tool_result",
+            data: {
+              toolCallId: "call-clippy",
+              success: false,
+              result: { content: "error: unused variable" },
+            },
+          },
+        ],
+      },
+    };
+    const result = await grader.grade(input);
+    expect(result.passed).toBe(false);
+    expect(result.metadata?.["failed_cargo_count"]).toBe(1);
+  });
+
+  it("detects cargo lint failures", async () => {
+    const grader = getGrader();
+    const input = {
+      config: { collect_trajectory_compiler_errors: true },
+      trajectory: {
+        events: [
+          {
+            type: "tool_call",
+            data: {
+              toolName: "powershell",
+              toolCallId: "call-lint",
+              arguments: { command: "cargo lint" },
+            },
+          },
+          {
+            type: "tool_result",
+            data: {
+              toolCallId: "call-lint",
+              success: false,
+              result: { content: "warning: lint failure" },
+            },
+          },
+        ],
+      },
+    };
+    const result = await grader.grade(input);
+    expect(result.passed).toBe(false);
+    expect(result.metadata?.["failed_cargo_count"]).toBe(1);
+  });
+
   it("emits compiler errors in metadata", async () => {
     const grader = getGrader();
 
@@ -85,7 +184,7 @@ describe("rust-cargo-build-failure grader", () => {
       makeInput(
         "error[E0277]: the trait bound `Option<std::string::String>: Something` is not satisfied",
         {
-          collect_compiler_errors: true,
+          collect_trajectory_compiler_errors: true,
           emit_in_metadata: true,
           error_exceptions: [
             {
@@ -100,7 +199,7 @@ describe("rust-cargo-build-failure grader", () => {
 
     expect(result.passed).toBe(true);
     expect(result.score).toBe(1);
-    expect(result.metadata?.["failed_build_count"]).toBe(0);
+    expect(result.metadata?.["failed_cargo_count"]).toBe(0);
     expect(result.metadata?.["compiler_error_count"]).toBe(1);
   });
 
@@ -111,7 +210,7 @@ describe("rust-cargo-build-failure grader", () => {
       makeInput(
         "error[E0277]: the trait bound `Vec<u8>: Display` is not satisfied",
         {
-          collect_compiler_errors: true,
+          collect_trajectory_compiler_errors: true,
           emit_in_metadata: true,
           error_exceptions: [
             {
@@ -125,7 +224,7 @@ describe("rust-cargo-build-failure grader", () => {
     );
 
     expect(result.passed).toBe(false);
-    expect(result.metadata?.["failed_build_count"]).toBe(1);
+    expect(result.metadata?.["failed_cargo_count"]).toBe(1);
     expect(result.metadata?.["compiler_error_count"]).toBe(1);
   });
 
@@ -134,7 +233,7 @@ describe("rust-cargo-build-failure grader", () => {
 
     const result = await grader.grade(
       makeInput("error[E0425]: cannot find value `x` in this scope", {
-        collect_compiler_errors: true,
+        collect_trajectory_compiler_errors: true,
         emit_in_metadata: false,
       }),
     );
@@ -145,19 +244,70 @@ describe("rust-cargo-build-failure grader", () => {
     expect(result.metadata?.["compiler_error_count"]).toBeUndefined();
   });
 
-  it("does not collect compiler errors when collect_compiler_errors is false", async () => {
+  it("does not collect trajectory compiler errors when collect_trajectory_compiler_errors is false", async () => {
     const grader = getGrader();
 
     const result = await grader.grade(
       makeInput("error[E0425]: cannot find value `x` in this scope", {
-        collect_compiler_errors: false,
+        collect_trajectory_compiler_errors: false,
         emit_in_metadata: true,
       }),
     );
 
-    expect(result.passed).toBe(false);
+    expect(result.passed).toBe(true);
+    expect(result.metadata?.["failed_cargo_count"]).toBe(0);
     expect(result.metadata?.["compiler_errors_collected"]).toBeUndefined();
     expect(result.metadata?.["compiler_errors"]).toBeUndefined();
+    expect(result.metadata?.["compiler_error_count"]).toBeUndefined();
+  });
+
+  it("accepts eval-style commands config entries", async () => {
+    const grader = getGrader();
+
+    const result = await grader.grade(
+      makeInput("error[E0425]: cannot find value `x` in this scope", {
+        execute_cargo_commands: false,
+        commands: [{ command: "cargo check" }, { command: "cargo clippy" }],
+      }),
+    );
+
+    expect(result.metadata?.["post_execution_commands"]).toBeUndefined();
+  });
+
+  it("does not analyze trajectory or execute post commands by default", async () => {
+    const grader = getGrader();
+
+    const input = {
+      config: {},
+      trajectory: {
+        events: [
+          {
+            type: "tool_call",
+            data: {
+              toolName: "powershell",
+              toolCallId: "call-default",
+              arguments: { command: "cargo build" },
+            },
+          },
+          {
+            type: "tool_result",
+            data: {
+              toolCallId: "call-default",
+              success: false,
+              result: { content: "error[E0308]: mismatched types" },
+            },
+          },
+        ],
+      },
+    };
+
+    const result = await grader.grade(input);
+
+    expect(result.metadata?.["cargo_calls_found"]).toBe(0);
+    expect(result.metadata?.["failed_cargo_count"]).toBe(0);
+    expect(result.metadata?.["post_execution_attempted"]).toBe(false);
+    expect(result.metadata?.["post_execution_calls_found"]).toBeUndefined();
+    expect(result.metadata?.["compiler_errors_collected"]).toBeUndefined();
     expect(result.metadata?.["compiler_error_count"]).toBeUndefined();
   });
 });

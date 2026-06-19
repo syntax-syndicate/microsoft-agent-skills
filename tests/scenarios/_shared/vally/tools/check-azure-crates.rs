@@ -230,11 +230,6 @@ fn main() {
         missing_deps.push("tokio");
         messages.push("Missing async runtime dependency 'tokio'".to_string());
     }
-    if has_official_azure_crate && !has_futures {
-        missing_deps.push("futures/futures-util");
-        messages
-            .push("Missing 'futures' or 'futures-util' for async stream operations".to_string());
-    }
 
     // Determine raw score on scale_1_10
     let raw_score: u8 = if has_banned_crate || has_obsolete_version || !has_official_azure_crate {

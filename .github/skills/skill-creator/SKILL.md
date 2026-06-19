@@ -218,6 +218,35 @@ const credential = new DefaultAzureCredential({
 const client = new ServiceClient(endpoint, credential);
 ```
 
+```go
+// Go
+import (
+  "context"
+
+  "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+  "github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+)
+
+ctx := context.Background()
+
+// Local dev: DefaultAzureCredential. Production: set AZURE_TOKEN_CREDENTIALS=prod or AZURE_TOKEN_CREDENTIALS=<specific_credential>
+cred, err := azidentity.NewDefaultAzureCredential(nil)
+if err != nil {
+  panic(err)
+}
+
+// Or use a specific credential directly in production:
+// cred, err := azidentity.NewManagedIdentityCredential(nil)
+
+client, err := azblob.NewClient("https://<account>.blob.core.windows.net/", cred, nil)
+if err != nil {
+  panic(err)
+}
+
+_ = client
+_ = ctx
+```
+
 ```rust
 // Rust
 use azure_identity::DeveloperToolsCredential;
@@ -254,11 +283,12 @@ See `references/azure-sdk-patterns.md` for detailed patterns including:
 - **.NET**: `Response<T>`, `Pageable<T>`, `Operation<T>`, mocking support
 - **Java**: Builder pattern, `PagedIterable`/`PagedFlux`, Reactor types
 - **TypeScript**: `PagedAsyncIterableIterator`, `AbortSignal`, browser considerations
+- **Go**: `context.Context` as first arg, `runtime.Pager[T]` via `New*Pager()` + `More()/NextPage(ctx)`, `runtime.Poller[T]` via `Begin*` + `PollUntilDone(ctx, nil)`, `to.Ptr(...)` helpers, and typed `*azcore.ResponseError`
 - **Rust**: Installation via `cargo add`, dependency rule for `azure_core`, `Response<T>`, `Pager<T>`, `RequestContent::from()`, `.into_model()`, explicit credential types, RBAC roles for Entra ID authentication
 
 ### Required Best Practices in Every Skill (User-Facing)
 
-#### Python, .Net, Java, and Typescript languages
+#### Python, .NET, Java, TypeScript, and Go languages
 
 **These two rules are not just authoring conventions for the skill itself — they MUST be explicitly written into every generated skill's `## Best Practices` section so end users who follow the skill apply them in their own code.**
 
@@ -466,9 +496,9 @@ item = client.create_item(name="example", data={...})
 
 | Required                  | Example                                                   | Purpose                  |
 | ------------------------- | --------------------------------------------------------- | ------------------------ |
-| **SDK Package**           | `azure-ai-agents`, `Azure.AI.OpenAI`                      | Identifies the exact SDK |
+| **SDK Package**           | `azure-ai-agents`, `Azure.AI.OpenAI`, `azblob`            | Identifies the exact SDK |
 | **Documentation URL**     | `https://learn.microsoft.com/en-us/azure/ai-services/...` | Primary source of truth  |
-| **Repository** (optional) | `Azure/azure-sdk-for-python`                              | For code patterns        |
+| **Repository** (optional) | `Azure/azure-sdk-for-python`, `Azure/azure-sdk-for-go`    | For code patterns        |
 
 **Prompt the user if not provided:**
 
@@ -476,7 +506,7 @@ item = client.create_item(name="example", data={...})
 To create this skill, I need:
 1. The SDK package name (e.g., azure-ai-projects)
 2. The Microsoft Learn documentation URL or GitHub repo
-3. The target language (py/dotnet/ts/java)
+3. The target language (py/dotnet/ts/java/go)
 ```
 
 **Search official docs first:**
@@ -533,7 +563,9 @@ Skills are organized by **language** and **product area** in the `skills/` direc
 **Naming convention:**
 
 - `azure-<service>-<subservice>-<language>`
-- Examples: `azure-ai-agents-py`, `azure-cosmos-java`, `azure-storage-blob-ts`
+- Examples: `azure-ai-agents-py`, `azure-cosmos-java`, `azure-storage-blob-ts`, `azure-storage-blob-go`
+- For Go skills in documentation prose, use the short package name (for example `azblob`).
+- Use the full module import path only in code/import examples (for example `github.com/Azure/azure-sdk-for-go/sdk/storage/azblob`).
 
 **For Azure SDK skills:**
 
@@ -570,6 +602,10 @@ ln -s ../../../.github/skills/azure-ai-agents-py agents
 # Example for azure-cosmos-db-py in python/data:
 cd skills/python/data
 ln -s ../../../.github/skills/azure-cosmos-db-py cosmos-db
+
+# Example for azure-storage-blob-go in go/data:
+cd skills/go/data
+ln -s ../../../.github/skills/azure-storage-blob-go blob
 ```
 
 **Symlink naming:**
@@ -777,9 +813,11 @@ or changed package guidance.
 
 For Azure SDK language skills, use official upstream source docs and examples as the source of truth:
 
+- Go: `https://github.com/Azure/azure-sdk-for-go/tree/main/sdk/<service>/<module>/README.md`
+- Go examples: `https://github.com/Azure/azure-sdk-for-go/tree/main/sdk/<service>/<module>/`
 - Rust: `https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/<service>/<crate>/README.md`
 - Rust examples: `https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/<service>/<crate>/examples/`
-- .NET/Java/Python/TS: use current Microsoft Learn package docs + official SDK repos
+- .NET/Java/Python/TS/Go: use current Microsoft Learn package docs + official SDK repos
 
 2. **Refresh skill content surgically**
 
@@ -855,6 +893,7 @@ azure-service-skill/
 └── references/
     ├── python.md
     ├── dotnet.md
+    ├── go.md
     ├── java.md
     └── typescript.md
 ```
@@ -915,7 +954,7 @@ Before completing a skill:
 
 - [ ] Description includes what AND when (trigger phrases)
 - [ ] SKILL.md under 500 lines
-- [ ] Authentication follows language rules (`DefaultAzureCredential` for Python/.NET/Java/TS local dev; `DeveloperToolsCredential` local dev + `ManagedIdentityCredential` production for Rust)
+- [ ] Authentication follows language rules (`DefaultAzureCredential` for Python/.NET/Java/TS/Go local dev; `DeveloperToolsCredential` local dev + `ManagedIdentityCredential` production for Rust)
 - [ ] Includes cleanup/delete in examples
 - [ ] References organized by feature
 - [ ] **(Python skills only) Best Practices section contains the two user-facing rules** (sync-or-async consistency + context managers for clients and async credentials), using the variant matched to the skill type
