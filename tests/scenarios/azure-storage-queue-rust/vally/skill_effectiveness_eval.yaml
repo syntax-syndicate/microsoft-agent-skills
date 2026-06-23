@@ -65,11 +65,17 @@ stimuli:
         - "**/*.lib"
         - "**/*.wasm"
     environment:
-      skills:
-        - ../../../../.github/plugins/azure-sdk-rust/skills/azure-storage-queue-rust
       files:
         - src: workspace/cargo.toml
           dest: Cargo.toml
+        - src: ../../_shared/vally/tools/check-azure-crates.rs
+          dest: .vally/tools/check-azure-crates.rs
+        - src: ../../_shared/vally/tools/check-token-credential.rs
+          dest: .vally/tools/check-token-credential.rs
+        - src: ../../_shared/vally/tools/check-async-runtime.rs
+          dest: .vally/tools/check-async-runtime.rs
+        - src: ../../_shared/vally/tools/check-no-secrets.rs
+          dest: .vally/tools/check-no-secrets.rs
     constraints:
       expect_skills:
         - azure-storage-queue-rust
@@ -150,7 +156,6 @@ stimuli:
             - "+nightly"
             - "-Zscript"
             - ".vally/tools/check-no-secrets.rs"
-
       - name: QueueServiceClient Construction
         type: prompt
         weight: 1.0

@@ -1,8 +1,7 @@
-name: azure-storage-blob-rust-skill-experiment
+# Purpose: Measure skill effectiveness by comparing the same stimulus with and without the corresponding skill.
+name: azure-keyvault-keys-rust-skill-experiment
 evals:
-  - eval-experiment.yaml
-  - eval-nobuild-experiment.yaml
-  - eval-keyvault-encryption.yaml
+  - skill_effectiveness_eval.yaml
 
 vary:
   - /defaults/model
@@ -16,7 +15,7 @@ variants:
       model: claude-sonnet-4.6
     environment:
       skills:
-        - ../../../../.github/plugins/azure-sdk-rust/skills/azure-storage-blob-rust
+        - ../../../../.github/plugins/azure-sdk-rust/skills/azure-keyvault-keys-rust
   sonnet_baseline:
     overrides:
       model: claude-sonnet-4.6

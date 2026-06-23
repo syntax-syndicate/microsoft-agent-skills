@@ -4,7 +4,7 @@ version: "1.0"
 type: capability
 scoring:
   weights: {}
-  threshold: 0.75
+  threshold: 1.0
 defaults:
   runs: 1
   timeout: 30m
@@ -72,8 +72,6 @@ stimuli:
         - "**/*.rlib"
         - "**/*.rmeta"
     environment:
-      skills:
-        - ../../../../.github/plugins/azure-sdk-rust/skills/azure-cosmos-rust
       files:
         - src: workspace/cargo.toml
           dest: Cargo.toml
@@ -99,43 +97,6 @@ stimuli:
             - TokenCredential authentication
             - Async/await with Tokio
           scoring: scale_1_5
-
-      - name: Official Azure SDK Crate Selection
-        type: program
-        weight: 1.0
-        config:
-          program: cargo
-          args:
-            - "+nightly"
-            - "-Zscript"
-            - ".vally/tools/check-azure-crates.rs"
-      - name: TokenCredential Authentication
-        type: program
-        weight: 1.0
-        config:
-          program: cargo
-          args:
-            - "+nightly"
-            - "-Zscript"
-            - ".vally/tools/check-token-credential.rs"
-      - name: Async-First with Tokio Runtime
-        type: program
-        weight: 1.0
-        config:
-          program: cargo
-          args:
-            - "+nightly"
-            - "-Zscript"
-            - ".vally/tools/check-async-runtime.rs"
-      - name: No Hardcoded Secrets
-        type: program
-        weight: 1.0
-        config:
-          program: cargo
-          args:
-            - "+nightly"
-            - "-Zscript"
-            - ".vally/tools/check-no-secrets.rs"
 
       - type: run-command
         name: "Cargo Check"
@@ -209,3 +170,12 @@ stimuli:
           Error handling with match and error extraction
           No .unwrap() on fallible operations
           Result<T, E> propagated through main with ? operator
+      - name: Async Runtime
+        type: prompt
+        weight: 1.0
+        model: gpt-5.3-codex
+        prompt: >
+          Uses #[tokio::main] on main function
+          All I/O operations awaited
+          Serde for serialization/deserialization
+          TokenCredential passed with Some(credential)

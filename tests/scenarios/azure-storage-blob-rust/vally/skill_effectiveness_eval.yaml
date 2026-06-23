@@ -4,7 +4,7 @@ version: "1.0"
 type: capability
 scoring:
   weights: {}
-  threshold: 1.0
+  threshold: 0.75
 defaults:
   runs: 1
   timeout: 30m

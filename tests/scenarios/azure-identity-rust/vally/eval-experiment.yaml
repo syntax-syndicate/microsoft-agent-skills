@@ -4,7 +4,7 @@ version: "1.0"
 type: capability
 scoring:
   weights: {}
-  threshold: 0.75
+  threshold: 1.0
 defaults:
   runs: 1
   timeout: 30m
@@ -73,8 +73,6 @@ stimuli:
         - "**/*.rlib"
         - "**/*.rmeta"
     environment:
-      skills:
-        - ../../../../.github/plugins/azure-sdk-rust/skills/azure-identity-rust
       files:
         - src: workspace/cargo.toml
           dest: Cargo.toml
@@ -127,42 +125,6 @@ stimuli:
 
       - name: DeveloperToolsCredential
         type: prompt
-            - name: Official Azure SDK Crate Selection
-              type: program
-              weight: 1.0
-              config:
-                program: cargo
-                args:
-                  - "+nightly"
-                  - "-Zscript"
-                  - ".vally/tools/check-azure-crates.rs"
-            - name: TokenCredential Authentication
-              type: program
-              weight: 1.0
-              config:
-                program: cargo
-                args:
-                  - "+nightly"
-                  - "-Zscript"
-                  - ".vally/tools/check-token-credential.rs"
-            - name: Async-First with Tokio Runtime
-              type: program
-              weight: 1.0
-              config:
-                program: cargo
-                args:
-                  - "+nightly"
-                  - "-Zscript"
-                  - ".vally/tools/check-async-runtime.rs"
-            - name: No Hardcoded Secrets
-              type: program
-              weight: 1.0
-              config:
-                program: cargo
-                args:
-                  - "+nightly"
-                  - "-Zscript"
-                  - ".vally/tools/check-no-secrets.rs"
         weight: 1.0
         model: gpt-5.3-codex
         prompt: >
@@ -231,3 +193,12 @@ stimuli:
           DeveloperToolsCredential for local development
           ManagedIdentityCredential for production on Azure
           ClientSecretCredential for CI/CD and service accounts
+      - name: Async Runtime
+        type: prompt
+        weight: 1.0
+        model: gpt-5.3-codex
+        prompt: >
+          Uses #[tokio::main] on main function
+          Credential operations are async-compatible
+          Multiple clients can be created and used concurrently
+          Result<T, E> propagated with ? operator

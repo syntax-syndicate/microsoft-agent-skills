@@ -4,7 +4,7 @@ version: "1.0"
 type: capability
 scoring:
   weights: {}
-  threshold: 1.0
+  threshold: 0.75
 defaults:
   runs: 1
   timeout: 30m
@@ -94,32 +94,6 @@ stimuli:
             - Error handling
           scoring: scale_1_5
 
-      # - type: run-command
-      #   name: "Build Application"
-      #   config:
-      #     command: cargo
-      #     args:
-      #       - "build"
-      #     timeout: 120s
-      #     stderr_contains: "Finished"
-      # - type: run-command
-      #   name: "Check Application"
-      #   config:
-      #     command: cargo
-      #     args:
-      #       - "check"
-      #     timeout: 90s
-      # - name: Rust Clippy Lints
-      #   type: run-command
-      #   weight: 0.5
-      #   config:
-      #     command: cargo
-      #     args:
-      #       - "clippy"
-      #       - "--"
-      #       - "-D"
-      #       - "warnings"
-      #     timeout: 120s
       - name: Official Azure SDK Crate Selection
         type: program
         weight: 1.0

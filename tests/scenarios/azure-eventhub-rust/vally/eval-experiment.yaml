@@ -4,7 +4,7 @@ version: "1.0"
 type: capability
 scoring:
   weights: {}
-  threshold: 0.75
+  threshold: 1.0
 defaults:
   runs: 1
   timeout: 30m
@@ -66,8 +66,6 @@ stimuli:
         - "**/*.rmeta"
         - "**/*.d"
     environment:
-      skills:
-        - ../../../../.github/plugins/azure-sdk-rust/skills/azure-eventhub-rust
       files:
         - src: workspace/cargo.toml
           dest: Cargo.toml
@@ -91,43 +89,6 @@ stimuli:
             - TokenCredential authentication
             - Async/await patterns throughout
           scoring: scale_1_5
-
-      - name: Official Azure SDK Crate Selection
-        type: program
-        weight: 1.0
-        config:
-          program: cargo
-          args:
-            - "+nightly"
-            - "-Zscript"
-            - ".vally/tools/check-azure-crates.rs"
-      - name: TokenCredential Authentication
-        type: program
-        weight: 1.0
-        config:
-          program: cargo
-          args:
-            - "+nightly"
-            - "-Zscript"
-            - ".vally/tools/check-token-credential.rs"
-      - name: Async-First with Tokio Runtime
-        type: program
-        weight: 1.0
-        config:
-          program: cargo
-          args:
-            - "+nightly"
-            - "-Zscript"
-            - ".vally/tools/check-async-runtime.rs"
-      - name: No Hardcoded Secrets
-        type: program
-        weight: 1.0
-        config:
-          program: cargo
-          args:
-            - "+nightly"
-            - "-Zscript"
-            - ".vally/tools/check-no-secrets.rs"
 
       - type: run-command
         name: "Cargo Check"
@@ -183,6 +144,14 @@ stimuli:
           Stream processing with while let Some(event_result) = stream.next().await
           Match on Ok/Err for per-event error handling
           Uses futures::stream::StreamExt trait for stream operations
+      - name: Async Runtime
+        type: prompt
+        weight: 1.0
+        model: gpt-5.3-codex
+        prompt: >
+          Code uses #[tokio::main] attribute and async/await throughout
+          All I/O operations are properly awaited
+          Result<T, Box<dyn std::error::Error>> main signature
       - name: Credential Management
         type: prompt
         weight: 1.0

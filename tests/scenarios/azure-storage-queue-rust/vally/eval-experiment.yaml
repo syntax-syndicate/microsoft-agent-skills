@@ -4,7 +4,7 @@ version: "1.0"
 type: capability
 scoring:
   weights: {}
-  threshold: 0.75
+  threshold: 1.0
 defaults:
   runs: 1
   timeout: 30m
@@ -65,8 +65,6 @@ stimuli:
         - "**/*.lib"
         - "**/*.wasm"
     environment:
-      skills:
-        - ../../../../.github/plugins/azure-sdk-rust/skills/azure-storage-queue-rust
       files:
         - src: workspace/cargo.toml
           dest: Cargo.toml
@@ -124,33 +122,14 @@ stimuli:
             - "-Zscript"
             - ".vally/tools/check-azure-crates.rs"
       - name: TokenCredential Authentication
-        type: program
+        type: prompt
         weight: 1.0
-        config:
-          program: cargo
-          args:
-            - "+nightly"
-            - "-Zscript"
-            - ".vally/tools/check-token-credential.rs"
-      - name: Async-First with Tokio Runtime
-        type: program
-        weight: 1.0
-        config:
-          program: cargo
-          args:
-            - "+nightly"
-            - "-Zscript"
-            - ".vally/tools/check-async-runtime.rs"
-      - name: No Hardcoded Secrets
-        type: program
-        weight: 1.0
-        config:
-          program: cargo
-          args:
-            - "+nightly"
-            - "-Zscript"
-            - ".vally/tools/check-no-secrets.rs"
-
+        model: gpt-5.3-codex
+        prompt: >
+          Authentication uses TokenCredential from azure_identity, created via
+          DeveloperToolsCredential::new(None) or ManagedIdentityCredential::new(None).
+          The credential is passed to QueueServiceClient::new() as Some(credential).
+          For production, uses ManagedIdentityCredential; for local dev, uses DeveloperToolsCredential.
       - name: QueueServiceClient Construction
         type: prompt
         weight: 1.0
@@ -169,6 +148,13 @@ stimuli:
           that converts to model with items containing message_id, pop_receipt, and message_text fields.
           Delete messages via queue_client.delete_message(id, pop_receipt, None).await?.
           Peek via queue_client.peek_messages(None).await?.
+      - name: Async Runtime
+        type: prompt
+        weight: 1.0
+        model: gpt-5.3-codex
+        prompt: >
+          Code uses #[tokio::main] and async/await. Queue operations are properly awaited.
+          Result<T, Box<dyn std::error::Error>> main signature for error propagation.
       - name: Error Handling
         type: prompt
         weight: 1.0

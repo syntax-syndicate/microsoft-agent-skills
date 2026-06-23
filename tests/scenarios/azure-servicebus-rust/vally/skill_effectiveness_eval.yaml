@@ -65,11 +65,17 @@ stimuli:
         - "**/*.rlib"
         - "**/*.rmeta"
     environment:
-      skills:
-        - ../../../../.github/plugins/azure-sdk-rust/skills/azure-servicebus-rust
       files:
         - src: workspace/cargo.toml
           dest: Cargo.toml
+        - src: ../../_shared/vally/tools/check-azure-crates.rs
+          dest: .vally/tools/check-azure-crates.rs
+        - src: ../../_shared/vally/tools/check-token-credential.rs
+          dest: .vally/tools/check-token-credential.rs
+        - src: ../../_shared/vally/tools/check-async-runtime.rs
+          dest: .vally/tools/check-async-runtime.rs
+        - src: ../../_shared/vally/tools/check-no-secrets.rs
+          dest: .vally/tools/check-no-secrets.rs
     constraints:
       expect_skills:
         - azure-servicebus-rust
@@ -90,42 +96,43 @@ stimuli:
             - TokenCredential authentication pattern
             - Async/await with Tokio #[tokio::main]
           scoring: scale_1_5
-        - name: Official Azure SDK Crate Selection
-          type: program
-          weight: 1.0
-          config:
-            program: cargo
-            args:
-              - "+nightly"
-              - "-Zscript"
-              - ".vally/tools/check-azure-crates.rs"
-        - name: TokenCredential Authentication
-          type: program
-          weight: 1.0
-          config:
-            program: cargo
-            args:
-              - "+nightly"
-              - "-Zscript"
-              - ".vally/tools/check-token-credential.rs"
-        - name: Async-First with Tokio Runtime
-          type: program
-          weight: 1.0
-          config:
-            program: cargo
-            args:
-              - "+nightly"
-              - "-Zscript"
-              - ".vally/tools/check-async-runtime.rs"
-        - name: No Hardcoded Secrets
-          type: program
-          weight: 1.0
-          config:
-            program: cargo
-            args:
-              - "+nightly"
-              - "-Zscript"
-              - ".vally/tools/check-no-secrets.rs"
+
+      - name: Official Azure SDK Crate Selection
+        type: program
+        weight: 1.0
+        config:
+          program: cargo
+          args:
+            - "+nightly"
+            - "-Zscript"
+            - ".vally/tools/check-azure-crates.rs"
+      - name: TokenCredential Authentication
+        type: program
+        weight: 1.0
+        config:
+          program: cargo
+          args:
+            - "+nightly"
+            - "-Zscript"
+            - ".vally/tools/check-token-credential.rs"
+      - name: Async-First with Tokio Runtime
+        type: program
+        weight: 1.0
+        config:
+          program: cargo
+          args:
+            - "+nightly"
+            - "-Zscript"
+            - ".vally/tools/check-async-runtime.rs"
+      - name: No Hardcoded Secrets
+        type: program
+        weight: 1.0
+        config:
+          program: cargo
+          args:
+            - "+nightly"
+            - "-Zscript"
+            - ".vally/tools/check-no-secrets.rs"
 
       - type: run-command
         name: "Cargo Check"
