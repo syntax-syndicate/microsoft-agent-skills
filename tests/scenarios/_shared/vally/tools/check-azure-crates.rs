@@ -182,17 +182,25 @@ fn main() {
 
     let mut version_check_warnings: Vec<String> = Vec::new();
     for (crate_name, declared_requirement) in &observed_azure_requirements {
-        match fetch_latest_crate_version(crate_name) {
-            Ok(latest_version) => {
-                match requirement_satisfies_latest(declared_requirement, &latest_version) {
+        match fetch_latest_crate_versions(crate_name) {
+            Ok((latest_stable, newest_published)) => {
+                match requirement_satisfies_latest(
+                    declared_requirement,
+                    latest_stable.as_deref(),
+                    &newest_published,
+                ) {
                     Ok(true) => {}
                     Ok(false) => {
                         has_outdated_azure_crate = true;
+                        let stable_display = latest_stable
+                            .as_deref()
+                            .map(|v| v.to_string())
+                            .unwrap_or_else(|| "<none>".to_string());
                         messages.push(format!(
-                            "Outdated Azure crate '{crate_name}': requirement '{declared_requirement}' does not include latest crates.io version {latest_version}"
+                            "Outdated Azure crate '{crate_name}': requirement '{declared_requirement}' does not include max stable {stable_display} or newest published {newest_published}"
                         ));
                         outdated_azure_crates.push(format!(
-                            "{crate_name}:{declared_requirement}->{latest_version}"
+                            "{crate_name}:{declared_requirement}->stable:{stable_display},newest:{newest_published}"
                         ));
                     }
                     Err(err) => {
@@ -204,7 +212,7 @@ fn main() {
             }
             Err(err) => {
                 version_check_warnings.push(format!(
-                    "Unable to verify latest crates.io version for '{crate_name}': {err}"
+                    "Unable to verify latest crates.io versions for '{crate_name}': {err}"
                 ));
             }
         }
@@ -448,15 +456,32 @@ fn scan_dependency_table(
     }
 }
 
-fn requirement_satisfies_latest(requirement: &str, latest_version: &str) -> Result<bool, String> {
+fn requirement_satisfies_latest(
+    requirement: &str,
+    latest_stable_version: Option<&str>,
+    newest_published_version: &str,
+) -> Result<bool, String> {
     let req = VersionReq::parse(requirement.trim())
         .map_err(|e| format!("invalid requirement '{requirement}': {e}"))?;
-    let latest = Version::parse(latest_version.trim())
-        .map_err(|e| format!("invalid latest version '{latest_version}': {e}"))?;
-    Ok(req.matches(&latest))
+    let newest = Version::parse(newest_published_version.trim())
+        .map_err(|e| format!("invalid newest version '{newest_published_version}': {e}"))?;
+
+    if req.matches(&newest) {
+        return Ok(true);
+    }
+
+    if let Some(stable_raw) = latest_stable_version {
+        let stable = Version::parse(stable_raw.trim())
+            .map_err(|e| format!("invalid max stable version '{stable_raw}': {e}"))?;
+        if req.matches(&stable) {
+            return Ok(true);
+        }
+    }
+
+    Ok(false)
 }
 
-fn fetch_latest_crate_version(crate_name: &str) -> Result<String, String> {
+fn fetch_latest_crate_versions(crate_name: &str) -> Result<(Option<String>, String), String> {
     let url = format!("https://crates.io/api/v1/crates/{crate_name}");
     let response = ureq::get(&url)
         .set("User-Agent", "azure-vally-evals/check-azure-crates")
@@ -474,15 +499,25 @@ fn fetch_latest_crate_version(crate_name: &str) -> Result<String, String> {
         .and_then(|v| v.as_object())
         .ok_or_else(|| "missing 'crate' object in response".to_string())?;
 
-    for key in ["max_stable_version", "max_version", "newest_version"] {
-        if let Some(ver) = crate_obj.get(key).and_then(|v| v.as_str()) {
-            if !ver.trim().is_empty() {
-                return Ok(ver.to_string());
-            }
-        }
-    }
+    let latest_stable = crate_obj
+        .get("max_stable_version")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(ToString::to_string);
 
-    Err("no version field found in crates.io response".to_string())
+    let newest_published = crate_obj
+        .get("max_version")
+        .and_then(|v| v.as_str())
+        .or_else(|| crate_obj.get("newest_version").and_then(|v| v.as_str()))
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(ToString::to_string)
+        .ok_or_else(|| {
+            "missing newest published version field in crates.io response".to_string()
+        })?;
+
+    Ok((latest_stable, newest_published))
 }
 
 fn resolve_workspace_member_manifests(

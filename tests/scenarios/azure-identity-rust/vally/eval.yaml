@@ -125,44 +125,44 @@ stimuli:
             - "build"
           timeout: 120s
 
+      - name: Official Azure SDK Crate Selection
+        type: program
+        weight: 1.0
+        config:
+          program: cargo
+          args:
+            - "+nightly"
+            - "-Zscript"
+            - ".vally/tools/check-azure-crates.rs"
+      - name: TokenCredential Authentication
+        type: program
+        weight: 1.0
+        config:
+          program: cargo
+          args:
+            - "+nightly"
+            - "-Zscript"
+            - ".vally/tools/check-token-credential.rs"
+      - name: Async-First with Tokio Runtime
+        type: program
+        weight: 1.0
+        config:
+          program: cargo
+          args:
+            - "+nightly"
+            - "-Zscript"
+            - ".vally/tools/check-async-runtime.rs"
+      - name: No Hardcoded Secrets
+        type: program
+        weight: 1.0
+        config:
+          program: cargo
+          args:
+            - "+nightly"
+            - "-Zscript"
+            - ".vally/tools/check-no-secrets.rs"
       - name: DeveloperToolsCredential
         type: prompt
-            - name: Official Azure SDK Crate Selection
-              type: program
-              weight: 1.0
-              config:
-                program: cargo
-                args:
-                  - "+nightly"
-                  - "-Zscript"
-                  - ".vally/tools/check-azure-crates.rs"
-            - name: TokenCredential Authentication
-              type: program
-              weight: 1.0
-              config:
-                program: cargo
-                args:
-                  - "+nightly"
-                  - "-Zscript"
-                  - ".vally/tools/check-token-credential.rs"
-            - name: Async-First with Tokio Runtime
-              type: program
-              weight: 1.0
-              config:
-                program: cargo
-                args:
-                  - "+nightly"
-                  - "-Zscript"
-                  - ".vally/tools/check-async-runtime.rs"
-            - name: No Hardcoded Secrets
-              type: program
-              weight: 1.0
-              config:
-                program: cargo
-                args:
-                  - "+nightly"
-                  - "-Zscript"
-                  - ".vally/tools/check-no-secrets.rs"
         weight: 1.0
         model: gpt-5.3-codex
         prompt: >
