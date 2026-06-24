@@ -228,10 +228,7 @@ Generate only code. Follow the patterns from the skill documentation exactly.
     const startTime = Date.now();
     const fullPrompt = this.buildPrompt(prompt, skillContext);
 
-    const client = new SDKCopilotClient({
-      autoStart: true,
-      autoRestart: false,
-    });
+    const client = new SDKCopilotClient();
 
     let rawResponse = "";
 
